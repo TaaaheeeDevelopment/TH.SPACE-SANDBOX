@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TH.SPACE SANDBOX | مستكشف الفضاء ثلاثي الأبعاد</title>
+  <!-- SEO & Meta Tags -->
+  <meta name="description" content="مستكشف كواكب المجموعة الشمسية ثلاثي الأبعاد بالكامل والتفاعلي بنظام واجهة مستخدم زجاجية مستقبلية ومؤثرات سينمائية وصوتية ساحرة.">
+  <meta name="author" content="Antigravity Team">
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="./style.css">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- GL Canvas for Three.js rendering -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- COSMIC LOADING SCREEN -->
+  <div id="loader-screen">
+    <div class="galaxy-loader">
+      <div class="orbit-ring ring-1"></div>
+      <div class="orbit-ring ring-2"></div>
+      <div class="orbit-ring ring-3"></div>
+      <div class="loader-core"></div>
+    </div>
+    <div class="loader-text-container">
+      <img src="images/sandbox_t.PNG.png" alt="TH.SPACE SANDBOX" class="loader-logo">
+      <p class="loader-subtitle">جاري محاذاة الكواكب وبناء الفضاء الافتراضي...</p>
+      <div class="progress-bar-container">
+        <div id="progress-fill" class="progress-bar-fill"></div>
+      </div>
+      <div id="progress-text" class="loader-percentage">0%</div>
+    </div>
+  </div>
+
+  <!-- MAIN HUD OVERLAY -->
+  <div class="hud-overlay">
+    
+    <!-- HEADER -->
+    <header class="header-bar">
+      <div class="title-container">
+        <img src="images/sandbox_t.PNG.png" alt="TH.SPACE SANDBOX" class="brand-logo">
+      </div>
+    </header>
+
+    <!-- TOP LEFT PANEL (Quick System Controls) -->
+    <div class="top-left-panel">
+      <button id="sound-btn" class="cyber-btn audio-mute-btn active" title="كتم/تشغيل الصوت">
+        <i class="fa-solid fa-volume-high"></i>
+        <span>كتم الصوت</span>
+      </button>
+      
+      <button id="settings-toggle-btn" class="cyber-btn" title="التحكم بالزمن والأبعاد">
+        <i class="fa-solid fa-sliders"></i>
+        <span>تعديل المدارات</span>
+      </button>
+
+      <button id="scale-mode-btn" class="cyber-btn" title="تبديل مقاييس الأحجام والمسافات">
+        <i class="fa-solid fa-expand"></i>
+        <span>المقياس التفاعلي</span>
+      </button>
+
+      <!-- Inclined Orbits Button -->
+      <button id="orbit-tilt-btn" class="cyber-btn" title="تبديل ميل المدارات">
+        <i class="fa-solid fa-circle-nodes"></i>
+        <span>المدارات المستوية</span>
+      </button>
+
+
+    </div>
+
+    <!-- TOP RIGHT PANEL (System Clock / HUD overlay details) -->
+    <div class="top-right-panel">
+      <div id="settings-card" class="glass-panel hud-settings-card" style="display: none; position: absolute; top: 155px; right: 20px; z-index: 100; width: 300px;">
+        <div class="card-title">إعدادات المحاكاة</div>
+        
+        <div class="setting-row">
+          <div class="setting-label">
+            <span>سرعة الدوران (الزمن)</span>
+            <span id="time-speed-value" class="setting-value">5.0x</span>
+          </div>
+          <input type="range" id="time-speed-slider" min="0" max="5" step="0.1" value="5.0" class="slider-input">
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <span>توسيع مدارات الكواكب</span>
+            <span id="orbit-scale-value" class="setting-value">1.0x</span>
+          </div>
+          <input type="range" id="orbit-scale-slider" min="0.8" max="2.2" step="0.05" value="1.0" class="slider-input">
+        </div>
+      </div>
+    </div>
+
+    <!-- LEFT HUD (Instructions and Overview Stats) -->
+    <aside class="left-hud">
+      <!-- Controls Guide -->
+      <div class="glass-panel instruction-card">
+        <div class="card-title">توجيهات الملاحة</div>
+        <ul class="instruction-list">
+          <li>
+            <i class="fa-solid fa-mouse-pointer"></i>
+            <span><strong>الروتيت (التحريك):</strong> اضغط على الماوس الأيسر واسحب لتصفح الفضاء.</span>
+          </li>
+          <li>
+            <i class="fa-solid fa-magnifying-glass-plus"></i>
+            <span><strong>الزووم (التقريب):</strong> استخدم عجلة الماوس للتقريب والابتعاد.</span>
+          </li>
+          <li>
+            <i class="fa-solid fa-up-down-left-right"></i>
+            <span><strong>التحريك الجانبي:</strong> اضغط بزر الماوس الأيمن واسحب لنقل المشهد.</span>
+          </li>
+          <li>
+            <i class="fa-solid fa-hand-pointer"></i>
+            <span><strong>الاستكشاف:</strong> انقر مباشرة على أي كوكب لعرض تفاصيله سينمائياً.</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Solar Overview Details -->
+      <div class="glass-panel ambient-stats-card">
+        <div>
+          <div class="ambient-fact-header">Cosmic System Information</div>
+          <div class="ambient-fact-title">المجموعة الشمسية</div>
+          <div class="ambient-fact-desc">نظامنا الكوكبي الذي يضم الشمس و8 كواكب تدور في مدارات بيضاوية دقيقة، محاطة ببلايين الأجرام الصغيرة كالمذنبات والنيازك.</div>
+        </div>
+        
+        <div class="solar-system-stats">
+          <div class="solar-stat-item">
+            <span class="solar-stat-label">نوع النجم:</span>
+            <span class="solar-stat-value">قزم أصفر (G2V)</span>
+          </div>
+          <div class="solar-stat-item">
+            <span class="solar-stat-label">العمر التقريبي:</span>
+            <span class="solar-stat-value">4.6 مليار سنة</span>
+          </div>
+          <div class="solar-stat-item">
+            <span class="solar-stat-label">قطر النظام:</span>
+            <span class="solar-stat-value">~15 تريليون كم</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT HUD (Detailed Planet Information - Sliders in/out dynamically) -->
+    <aside id="planet-hud" class="right-hud glass-panel">
+      <div class="planet-main-card">
+        
+        <!-- Hologram Visual Representation of Planet -->
+        <div class="planet-image-hud-container">
+          <div id="planet-graphic-svg" class="planet-svg-hologram"></div>
+        </div>
+
+        <div class="planet-badge-header">
+          <span id="planet-eng-name" class="planet-eng-name">EARTH</span>
+          <span id="planet-order" class="planet-order">الكوكب الثالث</span>
+        </div>
+
+        <div class="planet-title-block">
+          <h2 id="planet-ara-name" class="planet-ara-name">الأرض</h2>
+          <p id="planet-tagline" class="planet-tagline">الكوكب الأزرق المليء بالحياة والمحيطات.</p>
+        </div>
+
+        <p id="planet-description" class="planet-description">
+          تتميز بغلافها الجوي الغني بالأكسجين ومحيطاتها المائية الشاسعة التي تغطي معظم سطحها، مما يخلق بيئة فريدة لازدهار وتنوع الكائنات الحية.
+        </p>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-box-label">الكتلة النسبية</div>
+            <div id="stat-mass" class="stat-box-value">1.0 (الأرض)</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-label">قوة الجاذبية</div>
+            <div id="stat-gravity" class="stat-box-value">9.81 م/ث²</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-label">متوسط الحرارة</div>
+            <div id="stat-temp" class="stat-box-value">15 مئوية</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-label">عدد الأقمار</div>
+            <div id="stat-moons" class="stat-box-value">قمر واحد</div>
+          </div>
+          <div class="stat-box" style="grid-column: span 2;">
+            <div class="stat-box-label">المسافة عن الشمس</div>
+            <div id="stat-dist" class="stat-box-value">149.6 مليون كم</div>
+          </div>
+          <div class="stat-box" style="grid-column: span 2;">
+            <div class="stat-box-label">مدة السنة الكوكبية</div>
+            <div id="stat-year" class="stat-box-value">365 يوم أرضي</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Fun Fact Section -->
+      <div class="fun-fact-card">
+        <div class="card-title fun-fact-title">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>حقيقة مذهلة!</span>
+        </div>
+        <p id="planet-fun-fact" class="fun-fact-content">
+          توجد صفائح تكتونية نشطة على كوكب الأرض فقط في كامل نظامنا الكوكبي.
+        </p>
+      </div>
+
+      <!-- Planet Mode Selector -->
+      <div class="planet-mode-selector glass-panel">
+        <div class="selector-title">وضعية الكوكب المختار</div>
+        <div class="selector-buttons">
+          <button id="mode-freeze-btn" class="mode-btn active" title="إيقاف الحركة والدوران بالكامل">
+            <i class="fa-solid fa-snowflake"></i>
+            <span>ثبات كامل</span>
+          </button>
+          <button id="mode-rotate-btn" class="mode-btn" title="دوران الكوكب حول نفسه فقط">
+            <i class="fa-solid fa-arrows-spin"></i>
+            <span>دوران محوري</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="planet-actions-panel" style="padding: 15px;">
+        <button id="close-hud-btn" class="cyber-btn back-to-system-btn">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>الرجوع للمنظور الشامل</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- BOTTOM HUD (Planet Selection Dock) -->
+    <footer class="bottom-hud">
+      <div id="switcher-dock" class="glass-panel switcher-dock">
+        <!-- Sun -->
+        <div class="switcher-item active" data-planet-id="sun">
+          <img src="images/sun.jpg" class="dock-planet-img" alt="الشمس">
+          <span class="dock-planet-name">الشمس</span>
+        </div>
+        <!-- Mercury -->
+        <div class="switcher-item" data-planet-id="mercury">
+          <img src="images/mercury.jpg" class="dock-planet-img" alt="عطارد">
+          <span class="dock-planet-name">عطارد</span>
+        </div>
+        <!-- Venus -->
+        <div class="switcher-item" data-planet-id="venus">
+          <img src="images/venus.jpg" class="dock-planet-img" alt="الزهرة">
+          <span class="dock-planet-name">الزهرة</span>
+        </div>
+        <!-- Earth -->
+        <div class="switcher-item" data-planet-id="earth">
+          <img src="images/earth.jfif" class="dock-planet-img" alt="الأرض">
+          <span class="dock-planet-name">الأرض</span>
+        </div>
+        <!-- Mars -->
+        <div class="switcher-item" data-planet-id="mars">
+          <img src="images/mars.jpg" class="dock-planet-img" alt="المريخ">
+          <span class="dock-planet-name">المريخ</span>
+        </div>
+        <!-- Jupiter -->
+        <div class="switcher-item" data-planet-id="jupiter">
+          <img src="images/Jupiter.jpg" class="dock-planet-img" alt="المشتري">
+          <span class="dock-planet-name">المشتري</span>
+        </div>
+        <!-- Saturn -->
+        <div class="switcher-item" data-planet-id="saturn">
+          <img src="images/saturn.jpg" class="dock-planet-img" alt="زحل">
+          <span class="dock-planet-name">زحل</span>
+        </div>
+        <!-- Uranus -->
+        <div class="switcher-item" data-planet-id="uranus">
+          <img src="images/uranus.jfif" class="dock-planet-img" alt="أورانوس">
+          <span class="dock-planet-name">أورانوس</span>
+        </div>
+        <!-- Neptune -->
+        <div class="switcher-item" data-planet-id="neptune">
+          <img src="images/neptune.jfif" class="dock-planet-img" alt="نبتون">
+          <span class="dock-planet-name">نبتون</span>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- MOBILE HUD (Only visible on screens <= 1024px) -->
+  <div class="mobile-hud">
+    <!-- Top centered logo and three options -->
+    <header class="mobile-header">
+      <img src="images/sandbox_t.PNG.png" alt="TH.SPACE SANDBOX" class="mobile-brand-logo">
+      <div class="mobile-tab-nav">
+        <button id="mobile-tab-settings" class="mobile-nav-btn" data-panel="mobile-settings">
+          <i class="fa-solid fa-sliders"></i>
+          <span>التعديلات</span>
+        </button>
+        <button id="mobile-tab-planets" class="mobile-nav-btn" data-panel="mobile-planets">
+          <i class="fa-solid fa-globe"></i>
+          <span>الكواكب</span>
+        </button>
+        <button id="mobile-tab-instructions" class="mobile-nav-btn" data-panel="mobile-instructions">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>التعليمات</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Glassmorphic settings/adjustments panel -->
+    <div id="mobile-settings" class="mobile-drawer glass-panel">
+      <div class="drawer-header">
+        <h3>التعديلات والمحاكاة</h3>
+        <button class="close-drawer-btn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="drawer-content">
+        <!-- Sound control -->
+        <div class="mobile-setting-item">
+          <button id="mobile-sound-btn" class="cyber-btn audio-mute-btn active" style="width: 100%; justify-content: center;">
+            <i class="fa-solid fa-volume-high"></i>
+            <span>كتم الصوت</span>
+          </button>
+        </div>
+        <!-- Scale Mode control -->
+        <div class="mobile-setting-item">
+          <button id="mobile-scale-btn" class="cyber-btn" style="width: 100%; justify-content: center;">
+            <i class="fa-solid fa-expand"></i>
+            <span>المقياس التفاعلي</span>
+          </button>
+        </div>
+        <!-- Tilt Mode control -->
+        <div class="mobile-setting-item">
+          <button id="mobile-tilt-btn" class="cyber-btn" style="width: 100%; justify-content: center;">
+            <i class="fa-solid fa-circle-nodes"></i>
+            <span>المدارات المستوية</span>
+          </button>
+        </div>
+        <!-- Speed slider -->
+        <div class="mobile-setting-item">
+          <div class="setting-label">
+            <span>سرعة الدوران (الزمن)</span>
+            <span id="mobile-speed-val" class="setting-value">5.0x</span>
+          </div>
+          <input type="range" id="mobile-speed-slider" min="0" max="5" step="0.1" value="5.0" class="slider-input">
+        </div>
+        <!-- Orbit expansion slider -->
+        <div class="mobile-setting-item">
+          <div class="setting-label">
+            <span>توسيع مدارات الكواكب</span>
+            <span id="mobile-orbit-val" class="setting-value">1.0x</span>
+          </div>
+          <input type="range" id="mobile-orbit-slider" min="0.8" max="2.2" step="0.05" value="1.0" class="slider-input">
+        </div>
+      </div>
+    </div>
+
+    <!-- Glassmorphic planets navigation panel -->
+    <div id="mobile-planets" class="mobile-drawer glass-panel">
+      <div class="drawer-header">
+        <h3>اختر كوكباً للاستكشاف</h3>
+        <button class="close-drawer-btn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="drawer-content">
+        <div class="mobile-planets-grid">
+          <!-- Sun -->
+          <div class="mobile-planet-item" data-planet-id="sun">
+            <img src="images/sun.jpg" alt="الشمس">
+            <span>الشمس</span>
+          </div>
+          <!-- Mercury -->
+          <div class="mobile-planet-item" data-planet-id="mercury">
+            <img src="images/mercury.jpg" alt="عطارد">
+            <span>عطارد</span>
+          </div>
+          <!-- Venus -->
+          <div class="mobile-planet-item" data-planet-id="venus">
+            <img src="images/venus.jpg" alt="الزهرة">
+            <span>الزهرة</span>
+          </div>
+          <!-- Earth -->
+          <div class="mobile-planet-item" data-planet-id="earth">
+            <img src="images/earth.jfif" alt="الأرض">
+            <span>الأرض</span>
+          </div>
+          <!-- Mars -->
+          <div class="mobile-planet-item" data-planet-id="mars">
+            <img src="images/mars.jpg" alt="المريخ">
+            <span>المريخ</span>
+          </div>
+          <!-- Jupiter -->
+          <div class="mobile-planet-item" data-planet-id="jupiter">
+            <img src="images/Jupiter.jpg" alt="المشتري">
+            <span>المشتري</span>
+          </div>
+          <!-- Saturn -->
+          <div class="mobile-planet-item" data-planet-id="saturn">
+            <img src="images/saturn.jpg" alt="زحل">
+            <span>زحل</span>
+          </div>
+          <!-- Uranus -->
+          <div class="mobile-planet-item" data-planet-id="uranus">
+            <img src="images/uranus.jfif" alt="أورانوس">
+            <span>أورانوس</span>
+          </div>
+          <!-- Neptune -->
+          <div class="mobile-planet-item" data-planet-id="neptune">
+            <img src="images/neptune.jfif" alt="نبتون">
+            <span>نبتون</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Glassmorphic mobile instructions panel -->
+    <div id="mobile-instructions" class="mobile-drawer glass-panel">
+      <div class="drawer-header">
+        <h3>تعليمات الاستخدام للجوال</h3>
+        <button class="close-drawer-btn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="drawer-content">
+        <ul class="mobile-instruction-list">
+          <li>
+            <i class="fa-solid fa-fingerprint"></i>
+            <span><strong>التحريك:</strong> مرر بإصبع واحد في أي مكان للتحرك وتدوير الكاميرا في الفضاء.</span>
+          </li>
+          <li>
+            <i class="fa-solid fa-arrows-to-eye"></i>
+            <span><strong>الزووم (التكبير/التصغير):</strong> قم بتقريب إصبعيك لبعضهما للتصغير، أو أبعدهما للتكبير.</span>
+          </li>
+          <li>
+            <i class="fa-solid fa-up-down-left-right"></i>
+            <span><strong>التحريك الجانبي (البان):</strong> مرر بإصبعين معاً لسحب ونقل المشهد الفضائي.</span>
+          </li>
+          <li>
+            <i class="fa-solid fa-hand-pointer"></i>
+            <span><strong>الاستكشاف:</strong> اضغط مباشرة على الكوكب ثلاثي الأبعاد أو اختره من قائمة "الكواكب" للتقريب عليه وعرض تفاصيله المذهلة.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Floating drawer toggle button for focused planet details -->
+    <button id="mobile-drawer-toggle" class="mobile-drawer-toggle-btn glass-panel" style="display: none;">
+      <i class="fa-solid fa-angle-left"></i>
+      <span>عرض معلومات الكوكب</span>
+    </button>
+
+    <!-- Detailed Planet Information slide-in drawer on mobile -->
+    <div id="mobile-planet-hud-drawer" class="mobile-planet-drawer glass-panel">
+      <div class="drawer-header">
+        <h3 id="mobile-planet-ara-name">الأرض</h3>
+        <button id="mobile-close-hud-btn" class="close-drawer-btn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="drawer-content" style="max-height: calc(100vh - 120px); overflow-y: auto;">
+        <div class="planet-badge-header" style="margin-bottom: 10px;">
+          <span id="mobile-planet-eng-name" class="planet-eng-name">EARTH</span>
+          <span id="mobile-planet-order" class="planet-order">الكوكب الثالث</span>
+        </div>
+        <p id="mobile-planet-tagline" class="planet-tagline" style="margin-bottom: 12px;"></p>
+        <p id="mobile-planet-description" class="planet-description" style="margin-bottom: 15px;"></p>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-box-label">الكتلة النسبية</div>
+            <div id="mobile-stat-mass" class="stat-box-value">-</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-label">قوة الجاذبية</div>
+            <div id="mobile-stat-gravity" class="stat-box-value">-</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-label">متوسط الحرارة</div>
+            <div id="mobile-stat-temp" class="stat-box-value">-</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-box-label">عدد الأقمار</div>
+            <div id="mobile-stat-moons" class="stat-box-value">-</div>
+          </div>
+          <div class="stat-box" style="grid-column: span 2;">
+            <div class="stat-box-label">المسافة عن الشمس</div>
+            <div id="mobile-stat-dist" class="stat-box-value">-</div>
+          </div>
+          <div class="stat-box" style="grid-column: span 2;">
+            <div class="stat-box-label">مدة السنة الكوكبية</div>
+            <div id="mobile-stat-year" class="stat-box-value">-</div>
+          </div>
+        </div>
+
+        <!-- Fun Fact -->
+        <div class="fun-fact-card" style="margin-top: 15px; background: rgba(168, 85, 247, 0.05); flex-shrink: 0;">
+          <div class="card-title fun-fact-title">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>حقيقة مذهلة!</span>
+          </div>
+          <p id="mobile-planet-fun-fact" class="fun-fact-content"></p>
+        </div>
+
+        <!-- Mode Selectors -->
+        <div class="planet-mode-selector glass-panel" style="margin-top: 15px; flex-shrink: 0;">
+          <div class="selector-title">وضعية الكوكب المختار</div>
+          <div class="selector-buttons">
+            <button id="mobile-mode-freeze-btn" class="mode-btn active">
+              <i class="fa-solid fa-snowflake"></i>
+              <span>ثبات كامل</span>
+            </button>
+            <button id="mobile-mode-rotate-btn" class="mode-btn">
+              <i class="fa-solid fa-arrows-spin"></i>
+              <span>دوران محوري</span>
+            </button>
+          </div>
+        </div>
+
+        <button id="mobile-back-to-system-btn" class="cyber-btn back-to-system-btn" style="margin-top: 20px; width: 100%; justify-content: center; flex-shrink: 0;">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>الرجوع للمنظور الشامل</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOAD LIBRARIES SEQUENTIALLY (Using standard script tags to bypass local file:// CORS restrictions) -->
+  <!-- 1. GSAP Animation Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  
+  <!-- 2. Three.js Standard Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <!-- 3. OrbitControls (Standard ES5 browser CDN binding directly to THREE) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  
+  <!-- 4. Customized Space Databases & Engines (Populates global scope variables) -->
+  <script src="./data.js"></script>
+  <script src="./audio.js"></script>
+  
+  <!-- 5. Main Application Logic -->
+  <script src="./main.js"></script>
+</body>
+</html>
