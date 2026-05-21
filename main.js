@@ -279,12 +279,12 @@ function initThree() {
 
   // Lighting
   // 1. Sun light source (PointLight in the center)
-  pointLight = new THREE.PointLight(0xffffff, 2.8, 2000, 0.4);
+  pointLight = new THREE.PointLight(0xffffff, 4.8, 6000, 0.12);
   pointLight.position.set(0, 0, 0);
   solarSystemGroup.add(pointLight);
 
   // 2. Cosmic Ambient light (Subtle purple/blue tone for dark side of planets)
-  ambientLight = new THREE.AmbientLight(0x1a1e36, 0.35);
+  ambientLight = new THREE.AmbientLight(0x1a1e36, 0.45);
   scene.add(ambientLight);
 
   // Setup Raycasting
